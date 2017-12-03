@@ -8,16 +8,22 @@
 
 import Foundation
 
-class Card{
-    var cardShading: NSAttributedString
-    var cardNumber: Int
-    var cardSymbol: String
-    var cardColor: String
+struct Card: Equatable{
+    static func ==(lhs: Card, rhs: Card) -> Bool {
+        return (lhs.cardShading == rhs.cardShading) && (lhs.cardNumber == rhs.cardNumber) && (lhs.cardSymbol == rhs.cardSymbol) && (lhs.cardColor == rhs.cardColor)
+    }
     
-    init(shading: NSAttributedString, number: Int, symbol: String, color: String) {
-        cardShading = shading
-        cardNumber = number
-        cardSymbol = symbol
-        cardColor = color
+    let cardShading: Int
+    let cardNumber: Int
+    let cardSymbol: Int
+    let cardColor: Int
+    
+    
+    init(_ shading: Int, _ number: Int, _ symbol: Int, _ color: Int) {
+        self.cardShading = shading
+        self.cardNumber = number
+        self.cardSymbol = symbol
+        self.cardColor = color
+        
     }
 }
