@@ -14,9 +14,10 @@ class ViewController: UIViewController {
     private lazy var game = SetGame()
     
     override func viewDidLoad() {
-        updateViewFromModel()
+        setupNewGame()
     }
     
+    @IBOutlet weak var dealtCardButton: UIButton!
     
     @IBOutlet var cardButtons: [UIButton]!
     
@@ -29,25 +30,51 @@ class ViewController: UIViewController {
             
             checkMatch()
             highlightCards(sender: sender)
-//            updateViewFromModel()
+            _ = dealt3CardsDisabler()
+            updateViewFromModel()
             
         } else {
             print("can't find cards in cardButtons")
         }
     }
     
+    @IBAction func touchNewGame() {
+        print("touch new game button")
+        
+        setupNewGame()
+    }
+    
+    private func setupNewGame() {
+        game = SetGame()
+        selectedCards = [Int]()
+        buttonToCard = [Int:Int]()
+        cardToButton = [Int:Int]()
+        dealtCardButton.isEnabled = true
+        updateViewFromModel()
+
+    }
     
     @IBAction func dealCards() {
         
         // CheckMatch first
         checkMatch()
         
-        // Check number of cards to be dealt
+        // Check number of cards to be dealt --> deal 3 more button would be disabled already
+        let dealMore = dealt3CardsDisabler()
         
-        // Update Model and dealt cards
+        if dealMore {
+            // Update Model and dealt cards
+            game.dealtCard()
+            
+            // update views
+            updateViewFromModel()
+
+        }
         
+        _ = dealt3CardsDisabler()
     }
     
+
     
     // Controller coordination with model with these 4 dictionary
     private var shadingStrokesDict = [0: -1, 1: -1, 2: 5]
@@ -60,13 +87,14 @@ class ViewController: UIViewController {
     
     // recording which button goes to which card now
     private var buttonToCard = [Int:Int]()
+    private var cardToButton = [Int:Int]()
     
     
     private func setCardView(card: Card, button: UIButton ) {
         let attribute:[NSAttributedStringKey: Any] = [
             .strokeWidth: shadingStrokesDict[card.cardShading]!,
             .strokeColor: colorDict[card.cardColor]!,
-            .foregroundColor: colorDict[card.cardColor]!.withAlphaComponent(CGFloat(shadingAlphaValue[card.cardShading]!))
+            .foregroundColor: colorDict[card.cardColor]!.withAlphaComponent(CGFloat(shadingAlphaValue[card.cardShading]!))            
         ]
         
         // set n symbol
@@ -80,23 +108,54 @@ class ViewController: UIViewController {
 
     }
     
-    
-    
-    func updateViewFromModel(){
+    private func dealt3CardsDisabler() -> Bool {
+        let excessButton = cardButtons.count - buttonToCard.count
+        let excessCards = game.cardsDeck.count - (game.dealtCards.count + game.removedCards.count)
         
+        let dealMore = excessButton > 0 && excessCards > 0
+        
+        if  !dealMore {
+            dealtCardButton.isEnabled = false
+        } else {
+            dealtCardButton.isEnabled = true
+        }
+        
+        return dealMore
+        
+    }
+    
+    private func updateViewFromModel(){
         // hide all cards
         for idx in 0..<cardButtons.count {
             cardButtons[idx].isHidden = true
             
         }
 
-        // update color and shading
-        for (index, card) in game.dealtCards.enumerated() {
+        
+        for card in game.dealtCards {
+            let cardGameIndex = game.cardsDeck.index(of: card)!
             
+            if cardToButton[cardGameIndex] == nil {
+                for (index, button) in cardButtons.enumerated() {
+                    
+                    // find empty buttons
+                    if button.isHidden {
+                        
+                        cardToButton[cardGameIndex] = index
+                        buttonToCard[index] = cardGameIndex
+                        break
+                    }
+                }
+                
+                if cardToButton[cardGameIndex] == nil {
+                    print ("dealtCards has more than 24 cards")
+                }
+                
+            }
             
-            buttonToCard[index] = game.cardsDeck.index(of: card)
-            
-            setCardView(card: card, button: cardButtons[index])
+            // if cards already assign to a button
+            setCardView(card: card, button: cardButtons[cardToButton[cardGameIndex]!])
+
             
         }
         
@@ -108,7 +167,7 @@ class ViewController: UIViewController {
     /*
      highlight cards and determine if cards been selected
     */
-    func highlightCards(sender button: UIButton) {
+    private func highlightCards(sender button: UIButton) {
         // check if the cards has alread been highlighted
         if !selectedCards.contains(cardButtons.index(of: button)!) {
             selectedCards.append(cardButtons.index(of: button)!)
@@ -136,7 +195,7 @@ class ViewController: UIViewController {
      check match
      */
   
-    func checkMatch() {
+    private func checkMatch() {
         if selectedCards.count == 3 {
             // determine if there's match
             let isMatched = game.checkMatch(
@@ -155,12 +214,16 @@ class ViewController: UIViewController {
                     
                     // move the cards to removedCards
                
-                    let removedCard = game.dealtCards.remove(at: buttonToCard[idx]!)
-                                                             
+                    let removedCard = game.dealtCards.remove(at: game.dealtCards.index(of: game.cardsDeck[buttonToCard[idx]!])!)
+                    
+                    
+                    
                    game.removedCards.append(removedCard)
                     
                     // set the reference to none
+                    let tmpCardIndex = buttonToCard[idx]!
                     buttonToCard[idx] = nil
+                    cardToButton[tmpCardIndex] = nil
                     
                 }
             }

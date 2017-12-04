@@ -13,6 +13,8 @@ class SetGame {
     var cardsDeck = [Card]()
     var dealtCards = [Card]()
     var removedCards = [Card]()
+    var deckIdentifier = 0
+    
     
     func equalOrAllDifferent(att1: Int, att2: Int, att3: Int) -> Bool {
         return (att1 == att2 && att1 == att3 && att2 == att3) || (att1 != att2 && att1 != att3 && att2 != att3)
@@ -24,10 +26,14 @@ class SetGame {
 
 
     
-    func setUpGame() {
-        
+    func dealtCard() {
+        // double check there's more card to be dealt
+        if (cardsDeck.count - (dealtCards.count + removedCards.count)) > 0{
+            dealtCards += cardsDeck[deckIdentifier..<(deckIdentifier+3)]
+            deckIdentifier += 3
+        }
     }
-
+    
     init() {
         
         // initializing the deck of cards
@@ -51,6 +57,8 @@ class SetGame {
 //        }
         cardsDeck.shuffle()
         dealtCards = Array(cardsDeck[..<12])
+        deckIdentifier = 12
+        
     }
     
     
