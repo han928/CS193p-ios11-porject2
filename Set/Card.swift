@@ -8,22 +8,64 @@
 
 import Foundation
 
-struct Card: Equatable{
-    static func ==(lhs: Card, rhs: Card) -> Bool {
-        return (lhs.cardShading == rhs.cardShading) && (lhs.cardNumber == rhs.cardNumber) && (lhs.cardSymbol == rhs.cardSymbol) && (lhs.cardColor == rhs.cardColor)
+struct Card: Equatable, CustomStringConvertible{
+    var description: String {
+        return "\(symbol) \(number) \(symbol) \(color)"
     }
     
-    let cardShading: Int
-    let cardNumber: Int
-    let cardSymbol: Int
-    let cardColor: Int
+    static func ==(lhs: Card, rhs: Card) -> Bool {
+        return (lhs.shading.rawValue == rhs.shading.rawValue) && (lhs.number == rhs.number) && (lhs.symbol == rhs.symbol) && (lhs.color == rhs.color)
+    }
     
+    var shading: Shading
+    var number: Number
+    var symbol: Symbol
+    var color: Color
     
-    init(_ shading: Int, _ number: Int, _ symbol: Int, _ color: Int) {
-        self.cardShading = shading
-        self.cardNumber = number
-        self.cardSymbol = symbol
-        self.cardColor = color
+    enum Symbol: String, CustomStringConvertible {
+        var description: String {
+            return self.rawValue
+        }
+
+        case circle = "●"
+        case triangle = "▲"
+        case square = "◼︎"
+        static var all = [Symbol.circle, .triangle, .square]
         
     }
+    
+    enum Shading: String, CustomStringConvertible{
+        var description: String {
+            return "\(self.rawValue)"
+        }
+        
+        case solid
+        case shaded
+        case empty 
+        
+        static var all = [Shading.solid, Shading.shaded, Shading.empty]
+    }
+    
+    enum Color: String, CustomStringConvertible {
+        var description: String {
+            return "\(self.rawValue)"
+        }
+        case red
+        case green
+        case blue
+        static var all = [Color.red, .green, .blue]
+    }
+    
+    enum Number: Int, CustomStringConvertible{
+        var description: String {
+            return "\(self.rawValue)"
+        }
+
+        case one = 1
+        case two = 2
+        case three = 3
+        static var all = [Number.one, .two, .three]
+        
+    }
+    
 }

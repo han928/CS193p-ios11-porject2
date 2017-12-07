@@ -25,8 +25,7 @@ class ViewController: UIViewController {
         if let cardNumber = cardButtons.index(of: sender){
             
             print("touched cards no. \(cardNumber)")
-            print(game.cardsDeck[buttonToCard[cardNumber]!].cardShading,game.cardsDeck[buttonToCard[cardNumber]!].cardNumber,game.cardsDeck[buttonToCard[cardNumber]!].cardSymbol,
-                  game.cardsDeck[buttonToCard[cardNumber]!].cardColor)
+            print(game.cardsDeck[buttonToCard[cardNumber]!])
             
             checkMatch()
             highlightCards(sender: sender)
@@ -77,10 +76,14 @@ class ViewController: UIViewController {
 
     
     // Controller coordination with model with these 4 dictionary
-    private var shadingStrokesDict = [0: -1, 1: -1, 2: 5]
-    private var shadingAlphaValue:[Int: Float] = [0: 1.0, 1: 0.15, 2: 1.0 ]
-    private var colorDict = [0: UIColor.red, 1: UIColor.blue, 2: UIColor.green]
-    private var symbolDict = [0: "◼︎", 1: "▲", 2: "●"]
+    private var shadingStrokesDict = ["solid": -1,
+                                      "shaded": -1,
+                                      "empty": 5]
+    private var shadingAlphaValue = ["solid": 1.0,
+                                     "shaded": 0.15,
+                                     "empty": 1.0 ]
+    
+    private var colorDict = ["red": UIColor.red, "blue": UIColor.blue, "green": UIColor.green]
     
     // array to track selected cards, do nothing until selectedCards has 3 items, then reset
     private var selectedCards = [Int]()
@@ -92,13 +95,13 @@ class ViewController: UIViewController {
     
     private func setCardView(card: Card, button: UIButton ) {
         let attribute:[NSAttributedStringKey: Any] = [
-            .strokeWidth: shadingStrokesDict[card.cardShading]!,
-            .strokeColor: colorDict[card.cardColor]!,
-            .foregroundColor: colorDict[card.cardColor]!.withAlphaComponent(CGFloat(shadingAlphaValue[card.cardShading]!))            
+            .strokeWidth: shadingStrokesDict[card.shading.rawValue]!,
+            .strokeColor: colorDict[card.color.rawValue]!,
+            .foregroundColor: colorDict[card.color.rawValue]!.withAlphaComponent(CGFloat(shadingAlphaValue[card.shading.rawValue]!))
         ]
         
         // set n symbol
-        let buttonText = String(repeating: symbolDict[card.cardSymbol]!, count: (card.cardNumber+1) )
+        let buttonText = String(repeating: card.symbol.rawValue, count: (card.number.rawValue) )
         
         
         let attributedString = NSAttributedString(string: buttonText, attributes: attribute)
