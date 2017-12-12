@@ -8,26 +8,21 @@
 
 import UIKit
 
+@IBDesignable
 class CardView: UIView {
 
     @IBInspectable
-    var symbol: String = "oval" { didSet { setNeedsDisplay(); setNeedsLayout()}} // options: oval, squiggle, diamond
+    var symbol: String = "diamond" { didSet { setNeedsDisplay(); setNeedsLayout()}} // options: oval, squiggle, diamond
     @IBInspectable
-    var number: Int = 3 { didSet { setNeedsDisplay(); setNeedsLayout()}}
+    var number: Int = 2 { didSet { setNeedsDisplay(); setNeedsLayout()}}
     @IBInspectable
-    var shading: String = "open" { didSet { setNeedsDisplay(); setNeedsLayout()}} // options: solid, open, striped
+    var shading: String = "striped" { didSet { setNeedsDisplay(); setNeedsLayout()}} // options: solid, open, striped
     @IBInspectable
-    var color: String = "blue" { didSet { setNeedsDisplay(); setNeedsLayout()}}
+    var color: String = "red" { didSet { setNeedsDisplay(); setNeedsLayout()}}
     @IBInspectable
     var isFaceup: Bool = true
     
 
-    private func createCircle(newBound: CGRect) -> UIBezierPath {
-        let path = UIBezierPath()
-        path.addArc(withCenter: CGPoint(x: newBound.midX, y: newBound.midY), radius: 10, startAngle: 0, endAngle: 2 * CGFloat.pi, clockwise: true)
-        return path
-    }
-    
     
     private func createDiamond(in newBound: CGRect) -> UIBezierPath {
         let path = UIBezierPath()
@@ -52,28 +47,19 @@ class CardView: UIView {
     
     private func createSquiggle(in newBound: CGRect) -> UIBezierPath {
         let path = UIBezierPath()
+        path.move(to: CGPoint(x: newBound.minX + newBound.xSpacing, y: newBound.midY))
         
+        path.addCurve(to: CGPoint(x: newBound.maxX - newBound.xSpacing, y: newBound.midY), controlPoint1: CGPoint(x: newBound.midX - 2 * newBound.xSpacing, y: newBound.minY + newBound.ySpacing), controlPoint2: CGPoint(x: newBound.midX + 2 * newBound.xSpacing, y: newBound.midY + 2 * newBound.ySpacing))
+        
+        path.addCurve(to: CGPoint(x: newBound.minX + newBound.xSpacing, y: newBound.midY), controlPoint1: CGPoint(x: newBound.midX + 2 * newBound.xSpacing, y: newBound.maxY), controlPoint2: CGPoint(x:newBound.maxX, y: newBound.midY  +  2 * newBound.ySpacing))
+
         return path
     }
     
-    private func createSquare(x: CGFloat, y: CGFloat, width: CGFloat) -> UIBezierPath {
-        let path = UIBezierPath(rect: CGRect(x: x - width/2 , y: y - width/2, width: width, height: width))
-        return path
-    }
-    
-    private func createTriangle(x: CGFloat, y: CGFloat, height: CGFloat) -> UIBezierPath {
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: x , y: y - height/2))
-        path.addLine(to: CGPoint(x: x + (height / CGFloat(3.0.squareRoot())), y: y + height/2 ))
-        path.addLine(to: CGPoint(x: x - (height / CGFloat(3.0.squareRoot())), y: y + height/2 ))
-        path.close()
-        return path
-    }
     
     
     
     private func drawLine(path: UIBezierPath, x: CGFloat, y: CGFloat, height: CGFloat){
-//        let path = UIBezierPath()
         path.move(to: CGPoint(x: x, y: y))
         path.addLine(to: CGPoint(x: x, y: y + height))
         
@@ -149,12 +135,58 @@ class CardView: UIView {
                 path.addClip()
                 drawLineForShading(path: path, x: bounds.minX, y: bounds.minY, height: bounds.height, width: bounds.width)
             default:
-                print ("shading not included")
+                print ("shading out of range")
         }
         
     }
     
-    
+    private func drawSymbol () {
+        var symbolGenerator: (CGRect) -> UIBezierPath
+        symbolGenerator = createOval
+        switch symbol {
+        case "oval":
+            symbolGenerator = createOval
+        case "squiggle":
+            symbolGenerator = createSquiggle
+        case "diamond":
+            symbolGenerator = createDiamond
+        default:
+            print("symbol variable not a valid value")
+        }
+        var paths = [UIBezierPath]()
+        var boundList = [CGRect]()
+        
+        
+        switch number {
+        case 1: boundList.append(bounds.middle)
+        case 2:
+            boundList.append(bounds.topHalf)
+            boundList.append(bounds.bottomHalf)
+        case 3:
+            boundList.append(bounds.oneOfThree)
+            boundList.append(bounds.twoOfThree)
+            boundList.append(bounds.threeOfThree)
+        default:
+            print ("number exceed max possible number")
+        }
+        
+        for newBound in boundList {
+            paths.append(symbolGenerator(newBound))
+        }
+        
+        var path = UIBezierPath()
+        
+        for (i, p) in paths.enumerated(){
+            if i == 0 {
+                path = p
+            }
+            else {
+                path.append(p)
+            }
+        }
+        
+        configureView(path: path)
+    }
     
     
     override func draw(_ rect: CGRect) {
@@ -163,17 +195,10 @@ class CardView: UIView {
         UIColor.white.setFill()
         roundedRect.fill()
         
+        if isFaceup {
+            drawSymbol()
+        }
         
-        
-        
-        let path = createDiamond(in: bounds.oneOfThree)
-        let path2 = createOval(in: bounds.twoOfThree)
-        let path3 = createOval(in: bounds.threeOfThree)
-
-        path.append(path2)
-        path.append(path3)
-        configureView(path: path)
-
     }
  }
 
@@ -211,7 +236,7 @@ extension CGRect {
     }
     
     var middle: CGRect {
-        return self
+        return CGRect(x: minX, y: minY + height/4 , width: width, height: height/2 )
     }
     
     var oneOfThree: CGRect {

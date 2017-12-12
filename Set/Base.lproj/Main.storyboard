@@ -6,6 +6,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13772"/>
+        <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -284,12 +285,26 @@
                                     <action selector="dealCards" destination="BYZ-38-t0r" eventType="touchUpInside" id="ISS-t2-SbS"/>
                                 </connections>
                             </button>
-                            <view opaque="NO" contentMode="redraw" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dzt-iX-Fj6" customClass="CardView" customModule="Set" customModuleProvider="target">
-                                <rect key="frame" x="114" y="424" width="120" height="190"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            <view opaque="NO" contentMode="redraw" translatesAutoresizingMaskIntoConstraints="NO" id="dzt-iX-Fj6" customClass="CardView" customModule="Set" customModuleProvider="target">
+                                <rect key="frame" x="114" y="424" width="120" height="180"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="dzt-iX-Fj6" secondAttribute="height" multiplier="12:18" id="T7g-QV-Khp"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="number">
+                                        <integer key="value" value="1"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="string" keyPath="color" value="red"/>
+                                </userDefinedRuntimeAttributes>
                             </view>
                         </subviews>
                         <color key="backgroundColor" red="0.093107767403125763" green="0.62083399295806885" blue="0.10961682349443436" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="dzt-iX-Fj6" secondAttribute="bottom" constant="174" id="HF2-Ta-SmG"/>
+                            <constraint firstItem="dzt-iX-Fj6" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="380" id="LDA-AJ-wRd"/>
+                            <constraint firstItem="dzt-iX-Fj6" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="114" id="SDa-YY-uJy"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="dzt-iX-Fj6" secondAttribute="trailing" constant="141" id="THg-W3-XKK"/>
+                        </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <connections>
