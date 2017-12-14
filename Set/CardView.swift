@@ -10,6 +10,7 @@ import UIKit
 
 @IBDesignable
 class CardView: UIView {
+    
 
     @IBInspectable
     var symbol: String = "diamond" { didSet { setNeedsDisplay(); setNeedsLayout()}} // options: oval, squiggle, diamond
@@ -18,11 +19,22 @@ class CardView: UIView {
     @IBInspectable
     var shading: String = "striped" { didSet { setNeedsDisplay(); setNeedsLayout()}} // options: solid, open, striped
     @IBInspectable
-    var color: String = "red" { didSet { setNeedsDisplay(); setNeedsLayout()}}
+    var color: String = "red" { didSet { setNeedsDisplay(); setNeedsLayout()}} // options: red, green, purple
     @IBInspectable
-    var isFaceup: Bool = true
+    var isSelected: Bool = false { didSet { setNeedsDisplay(); setNeedsLayout()}}
     
-
+    private var uiColor = UIColor()
+    
+    func selectedByTapGesture(by recognizer: UITapGestureRecognizer){
+        switch recognizer.state {
+        case .changed, .ended:
+            print("Detected taps")
+        default:
+            break
+        }
+    }
+    
+    
     
     private func createDiamond(in newBound: CGRect) -> UIBezierPath {
         let path = UIBezierPath()
@@ -62,74 +74,43 @@ class CardView: UIView {
     private func drawLine(path: UIBezierPath, x: CGFloat, y: CGFloat, height: CGFloat){
         path.move(to: CGPoint(x: x, y: y))
         path.addLine(to: CGPoint(x: x, y: y + height))
-        
-        switch color{
-            case "red":
-                path.lineWidth = shadedLineWidth
-                UIColor.red.setStroke()
-                path.stroke()
-            case "blue":
-                path.lineWidth = shadedLineWidth
-                UIColor.blue.setStroke()
-                path.stroke()
-            case "green":
-                path.lineWidth = shadedLineWidth
-                UIColor.green.setStroke()
-                path.stroke()
-            default:
-                print("color value not in rgb")
-                UIColor.black.setStroke()
-        }
+        path.lineWidth = shadedLineWidth
+
+        uiColor.setStroke()
         path.stroke()
         
     }
     
     private func drawLineForShading(path: UIBezierPath, x: CGFloat, y: CGFloat, height: CGFloat, width: CGFloat) {
-        let spacing = CGFloat(width / 50)
-        for i in 0..<50 {
+        let spacing = CGFloat(width / CGFloat(numberOfLines))
+        for i in 0..<Int(numberOfLines) {
             drawLine(path: path, x: x + CGFloat(i) * spacing, y: y, height: height)
         }
         
     }
     
     private func configureView(path: UIBezierPath) {
-        
+        path.lineWidth = lineWidth
+
         switch color{
             case "red":
-                path.lineWidth = lineWidth
-                UIColor.red.setStroke()
-                path.stroke()
-            case "blue":
-                path.lineWidth = lineWidth
-                UIColor.blue.setStroke()
-                path.stroke()
+                uiColor = UIColor.red
+            case "purple":
+                uiColor = UIColor.purple
             case "green":
-                path.lineWidth = lineWidth
-                UIColor.green.setStroke()
-                path.stroke()
+                uiColor = UIColor.green
             default:
                 print("color value not in rgb")
                 UIColor.black.setStroke()
         }
-        
+        uiColor.setStroke()
+        path.stroke()
+
         switch shading {
             case "solid":
-                switch color {
-                case "red":
-                    UIColor.red.setFill()
-                    path.fill()
-                case "blue":
-                    UIColor.blue.setFill()
-                    path.fill()
-                case "green":
-                    UIColor.green.setFill()
-                    path.fill()
-                default:
-                    print("color value not in rgb")
-                    UIColor.black.setStroke()
-                }
+                uiColor.setFill()
+                path.fill()
             case "open":
-                
                 break
             case "striped":
                 path.addClip()
@@ -191,13 +172,18 @@ class CardView: UIView {
     
     override func draw(_ rect: CGRect) {
         let roundedRect = UIBezierPath(roundedRect: bounds, cornerRadius: 10)
-        roundedRect.addClip()
+        roundedRect.addClip()   
         UIColor.white.setFill()
         roundedRect.fill()
         
-        if isFaceup {
-            drawSymbol()
+        if isSelected {
+            UIColor.red.setStroke()
+            roundedRect.lineWidth = 5.0
+            roundedRect.stroke()
         }
+        
+        
+        drawSymbol()
         
     }
  }
@@ -207,6 +193,10 @@ extension CardView {
     private struct SizeRatio {
         static let circleRadiusRatio: CGFloat = 0.1
         static let lineWidth: CGFloat = 0.02
+    }
+    
+    private var numberOfLines: CGFloat{
+        return bounds.size.width / 3
     }
     
     private var circleRadius: CGFloat {

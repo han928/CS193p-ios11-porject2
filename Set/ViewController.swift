@@ -12,35 +12,125 @@ class ViewController: UIViewController {
 
     // start SetGame instance
     private lazy var game = SetGame()
-    
+    // initialize the grid with initial dealtCards
+    private lazy var grid = refreshGrid()
+
     override func viewDidLoad() {
         setupNewGame()
+        updateViewFromModel()
+        
     }
     
-    @IBOutlet weak var dealtCardButton: UIButton!
+    @IBAction func selectCard(_ sender: UITapGestureRecognizer) {
+        switch sender.state {
+        case .ended, .changed:
+            if let buttonNumber = getCardTouched(from: sender.location(in: cardViewCollections)){
     
-    @IBOutlet var cardButtons: [UIButton]!
+                print("touched cards no. \(buttonNumber)")
     
-    @IBAction func touchCard(_ sender: UIButton) {
-        if let cardNumber = cardButtons.index(of: sender){
-            
-            print("touched cards no. \(cardNumber)")
-            print(game.cardsDeck[buttonToCard[cardNumber]!])
-            
-            checkMatch()
-            highlightCards(sender: sender)
-            _ = dealt3CardsDisabler()
-            updateViewFromModel()
-            
-        } else {
-            print("can't find cards in cardButtons")
+                checkMatch(buttonNumber: buttonNumber)
+                highlightCards(buttonNumber: buttonNumber)
+                _ = dealt3CardsDisabler()
+                updateViewFromModel()
+    
+            } else {
+                print("can't find cards in cardButtons")
+                }
+        default:
+            print("not ended")
         }
     }
     
+    @IBOutlet weak var cardViewCollections: UIView! {
+        didSet {
+            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(dealCards))
+            swipe.direction = .down
+            cardViewCollections.addGestureRecognizer(swipe)
+            
+            let rotation = UIRotationGestureRecognizer(target: self, action: #selector(shuffleCards(sender:)))
+            
+            cardViewCollections.addGestureRecognizer(rotation)
+        }
+    }
+    
+
+    @objc private func shuffleCards(sender rocognizer: UIRotationGestureRecognizer) {
+        switch rocognizer.state {
+        case .ended:
+                game.dealtCards.shuffle()
+                updateViewFromModel()
+        default:
+                break
+        }
+    }
+    @IBOutlet weak var dealtCardButton: UIButton!
+    
+    
+    
     @IBAction func touchNewGame() {
-        print("touch new game button")
-        
         setupNewGame()
+    }
+    
+    private func getCardTouched(from point: CGPoint) -> Int? {
+        for idx in 0..<grid.cellCount{
+            if let rect = grid[idx] {
+                if rect.contains(point) {
+                    return idx
+                }
+            }
+            
+        }
+        return nil
+    }
+    
+    private func refreshGrid() -> Grid{
+        let nSideCount = Int(ceil(Float(game.dealtCards.count).squareRoot()))
+
+        grid = Grid(layout: Grid.Layout.dimensions(rowCount: Int(nSideCount), columnCount: nSideCount), frame: cardViewCollections.bounds.insetBy(dx: 10, dy: 10))
+        
+        return grid
+    }
+
+    private func setCardView(card: Card, indexOf subView: Int ) {
+        let newRect = grid[subView]!
+        let cardView = CardView(frame: newRect.insetBy(dx: newRect.size.width/15, dy: newRect.size.width/15))
+        
+        cardView.color = card.color.rawValue
+        cardView.number = card.number.rawValue
+        cardView.symbol = card.symbol.rawValue
+        cardView.shading = card.shading.rawValue
+        cardView.isOpaque = false
+        
+        if selectedCards.contains(game.cardsDeck.index(of: card)!) {
+            cardView.isSelected = true
+        }
+        cardViewCollections.addSubview(cardView)
+        cardViewArray.append(cardView)
+    }
+
+    private func updateViewFromModel() {
+        // refresh the grid size
+        grid = refreshGrid()
+        
+        // hide all cards
+        cardViewCollections.subviews.forEach({ $0.removeFromSuperview()})
+        
+        // refresh cardToButton and buttonToCard
+        buttonToCard = [Int:Int]()
+        cardToButton = [Int:Int]()
+
+        
+        for (cardIndex, card) in game.dealtCards.enumerated() {
+            let cardGameIndex = game.cardsDeck.index(of: card)!
+            
+            
+            
+            cardToButton[cardGameIndex] = cardIndex
+            buttonToCard[cardIndex] = cardGameIndex
+            
+            setCardView(card: card, indexOf: cardIndex)
+            
+        }
     }
     
     private func setupNewGame() {
@@ -56,11 +146,10 @@ class ViewController: UIViewController {
     @IBAction func dealCards() {
         
         // CheckMatch first
-        checkMatch()
+        checkMatch(buttonNumber: nil)
         
         // Check number of cards to be dealt --> deal 3 more button would be disabled already
         let dealMore = dealt3CardsDisabler()
-        
         if dealMore {
             // Update Model and dealt cards
             game.dealtCard()
@@ -75,16 +164,6 @@ class ViewController: UIViewController {
     
 
     
-    // Controller coordination with model with these 4 dictionary
-    private var shadingStrokesDict = ["solid": -1,
-                                      "shaded": -1,
-                                      "empty": 5]
-    private var shadingAlphaValue = ["solid": 1.0,
-                                     "shaded": 0.15,
-                                     "empty": 1.0 ]
-    
-    private var colorDict = ["red": UIColor.red, "blue": UIColor.blue, "green": UIColor.green]
-    
     // array to track selected cards, do nothing until selectedCards has 3 items, then reset
     private var selectedCards = [Int]()
     
@@ -92,30 +171,14 @@ class ViewController: UIViewController {
     private var buttonToCard = [Int:Int]()
     private var cardToButton = [Int:Int]()
     
+    // array to store cardViews
+    private var cardViewArray = [CardView]()
     
-    private func setCardView(card: Card, button: UIButton ) {
-        let attribute:[NSAttributedStringKey: Any] = [
-            .strokeWidth: shadingStrokesDict[card.shading.rawValue]!,
-            .strokeColor: colorDict[card.color.rawValue]!,
-            .foregroundColor: colorDict[card.color.rawValue]!.withAlphaComponent(CGFloat(shadingAlphaValue[card.shading.rawValue]!))
-        ]
-        
-        // set n symbol
-        let buttonText = String(repeating: card.symbol.rawValue, count: (card.number.rawValue) )
-        
-        
-        let attributedString = NSAttributedString(string: buttonText, attributes: attribute)
-        button.setAttributedTitle(attributedString, for: UIControlState.normal)
-        button.isHidden = false
-        
-
-    }
     
     private func dealt3CardsDisabler() -> Bool {
-        let excessButton = cardButtons.count - buttonToCard.count
         let excessCards = game.cardsDeck.count - (game.dealtCards.count + game.removedCards.count)
         
-        let dealMore = excessButton > 0 && excessCards > 0
+        let dealMore = excessCards > 0
         
         if  !dealMore {
             dealtCardButton.isEnabled = false
@@ -127,120 +190,80 @@ class ViewController: UIViewController {
         
     }
     
-    private func updateViewFromModel(){
-        // hide all cards
-        for idx in 0..<cardButtons.count {
-            cardButtons[idx].isHidden = true
-            
-        }
-
-        
-        for card in game.dealtCards {
-            let cardGameIndex = game.cardsDeck.index(of: card)!
-            
-            if cardToButton[cardGameIndex] == nil {
-                for (index, button) in cardButtons.enumerated() {
-                    
-                    // find empty buttons
-                    if button.isHidden {
-                        
-                        cardToButton[cardGameIndex] = index
-                        buttonToCard[index] = cardGameIndex
-                        break
-                    }
-                }
-                
-                if cardToButton[cardGameIndex] == nil {
-                    print ("dealtCards has more than 24 cards")
-                }
-                
-            }
-            
-            // if cards already assign to a button
-            setCardView(card: card, button: cardButtons[cardToButton[cardGameIndex]!])
-
-            
-        }
-        
-        
-    }
-    
     
     
     /*
      highlight cards and determine if cards been selected
     */
-    private func highlightCards(sender button: UIButton) {
+    private func highlightCards(buttonNumber: Int) {
         // check if the cards has alread been highlighted
-        if !selectedCards.contains(cardButtons.index(of: button)!) {
-            selectedCards.append(cardButtons.index(of: button)!)
-            button.layer.borderWidth = 3.0
-            button.layer.borderColor = UIColor.blue.cgColor
+        if buttonToCard[buttonNumber] != nil {
+            if !selectedCards.contains(buttonToCard[buttonNumber]!) {
+                selectedCards.append(buttonToCard[buttonNumber]!)
+                
+            } else {
+                selectedCards = selectedCards.filter {$0 != buttonToCard[buttonNumber]!}
+            }
 
-        } else {
-            
-            selectedCards = selectedCards.filter {$0 != cardButtons.index(of: button)!}
-            
-            reverseHighlightCards(sender: button)
         }
-        
+
     }
+
     
-    /*
-     remove highlight on the cards
-    */
-    func reverseHighlightCards(sender button: UIButton) {
-        button.layer.borderWidth = 0
-    }
 
     
     /*
      check match
      */
   
-    private func checkMatch() {
+    private func checkMatch(buttonNumber: Int?) {
         if selectedCards.count == 3 {
+            
             // determine if there's match
             let isMatched = game.checkMatch(
-                card1: game.cardsDeck[buttonToCard[selectedCards[0]]!],
-                card2: game.cardsDeck[buttonToCard[selectedCards[1]]!],
-                card3: game.cardsDeck[buttonToCard[selectedCards[2]]!])
-            
-            
+                card1: game.cardsDeck[selectedCards[0]],
+                card2: game.cardsDeck[selectedCards[1]],
+                card3: game.cardsDeck[selectedCards[2]])
+
+
             // de-select the cards
             for idx in selectedCards {
-                reverseHighlightCards(sender: cardButtons[idx])
-                
+
                 if isMatched {
-                    // hide the button if there's match
-                    cardButtons[idx].isHidden = true
+
                     
                     // move the cards to removedCards
-               
-                    let removedCard = game.dealtCards.remove(at: game.dealtCards.index(of: game.cardsDeck[buttonToCard[idx]!])!)
-                    
-                    
-                    
+                    let removedCard = game.dealtCards.remove(at: game.dealtCards.index(of: game.cardsDeck[idx])!)
+
+
+
                    game.removedCards.append(removedCard)
-                    
-                    // set the reference to none
-                    let tmpCardIndex = buttonToCard[idx]!
-                    buttonToCard[idx] = nil
-                    cardToButton[tmpCardIndex] = nil
-                    
+
+//                    // set the reference to none
+//                    let tmpCardIndex = buttonToCard[idx]!
+//                    buttonToCard[idx] = nil
+//                    cardToButton[tmpCardIndex] = nil
+
                 }
             }
 
             print ("isMatched's value is \(isMatched)")
-            
+
             // reset selectedCards to no selection
             selectedCards = []
             
-            
+            if buttonNumber != nil {
+                let fourthCardNumber = buttonToCard[buttonNumber!]!
+                selectedCards.append(fourthCardNumber)
+
+            }
+
         }
 
     }
-    
+
+
+
     
 }
 

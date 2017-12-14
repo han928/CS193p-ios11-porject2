@@ -27,10 +27,10 @@ struct Card: Equatable, CustomStringConvertible{
             return self.rawValue
         }
 
-        case circle = "●"
-        case triangle = "▲"
-        case square = "◼︎"
-        static var all = [Symbol.circle, .triangle, .square]
+        case oval
+        case squiggle
+        case diamond
+        static var all = [Symbol.oval, .squiggle, .diamond]
         
     }
     
@@ -40,10 +40,10 @@ struct Card: Equatable, CustomStringConvertible{
         }
         
         case solid
-        case shaded
-        case empty 
+        case striped
+        case open
         
-        static var all = [Shading.solid, Shading.shaded, Shading.empty]
+        static var all = [Shading.solid, Shading.striped, Shading.open]
     }
     
     enum Color: String, CustomStringConvertible {
@@ -52,8 +52,8 @@ struct Card: Equatable, CustomStringConvertible{
         }
         case red
         case green
-        case blue
-        static var all = [Color.red, .green, .blue]
+        case purple
+        static var all = [Color.red, .green, .purple]
     }
     
     enum Number: Int, CustomStringConvertible{
